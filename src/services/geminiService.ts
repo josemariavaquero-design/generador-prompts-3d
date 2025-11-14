@@ -11,14 +11,9 @@ export const generateImage = async (prompt: string): Promise<string | null> => {
     return null;
   }
   
-  // FIX: Use process.env.API_KEY as per coding guidelines. This resolves the error on import.meta.env.
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    // FIX: Updated error message to reflect the correct environment variable.
-    throw new Error("La clave de API no está configurada. Asegúrate de añadir API_KEY a tus variables de entorno.");
-  }
-  
-  const ai = new GoogleGenAI({ apiKey });
+  // FIX: Per coding guidelines, the API key is retrieved from `process.env.API_KEY`
+  // and it is assumed to be pre-configured and valid.
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   try {
     const response = await ai.models.generateContent({
@@ -51,7 +46,8 @@ export const generateImage = async (prompt: string): Promise<string | null> => {
              throw new Error("Demasiadas solicitudes. Por favor, espera un momento.");
         }
         if (error.message.toLowerCase().includes('entity was not found') || error.message.toLowerCase().includes('api key not found')) {
-            throw new Error("Clave de API no encontrada o incorrecta. Verifica tu clave.");
+            // FIX: Updated error message to be more generic since we assume the key is present.
+            throw new Error("Clave de API no encontrada o incorrecta. Verifica tu variable de entorno API_KEY.");
         }
         throw new Error(`Error de la API de Gemini: ${error.message}`);
     }

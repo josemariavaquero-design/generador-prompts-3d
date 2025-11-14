@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { usePromptGenerator } from './hooks/usePromptGenerator';
 import { CONTROL_SECTIONS, SIMPLE_CONTROL_SECTIONS } from './constants';
 import Viewer from './components/Viewer';
@@ -10,10 +10,8 @@ import Gallery from './components/Gallery';
 import GalleryControls from './components/GalleryControls';
 import Toast from './components/Toast';
 import type { SavedGeneration } from './types';
-// FIX: Removed ApiKeyOverlay import as API key is now handled by environment variables.
 
 export default function App(): React.ReactElement {
-  // FIX: Removed API key state management. The API key is now sourced from environment variables.
   const { 
     state, 
     dispatch, 
@@ -55,7 +53,6 @@ export default function App(): React.ReactElement {
 
   const sectionsToShow = mode === 'detailed' ? CONTROL_SECTIONS : SIMPLE_CONTROL_SECTIONS;
 
-  // FIX: Removed ApiKeyOverlay rendering. The app is now always accessible, assuming the API key is set in the environment.
   return (
     <>
       <div className={`bg-gray-900 min-h-screen text-gray-200 font-sans p-4 sm:p-6 lg:p-8`}>
