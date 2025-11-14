@@ -1,0 +1,5 @@
+{
+  "name": "3D Prompt Generator with Real-Time Viewer",
+  "description": "An advanced tool to generate detailed prompts for 3D rendering, featuring a real-time visualizer to preview object transformations and materials.",
+  "requestFramePermissions": []
+}

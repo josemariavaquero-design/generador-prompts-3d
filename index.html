@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Prompt Generator with Real-Time Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        background: linear-gradient(180deg, #0f1216, #0a0c10);
+      }
+      @keyframes fadeInOut {
+        0% { opacity: 0; transform: translateY(20px) translateX(-50%); }
+        20% { opacity: 1; transform: translateY(0) translateX(-50%); }
+        80% { opacity: 1; transform: translateY(0) translateX(-50%); }
+        100% { opacity: 0; transform: translateY(20px) translateX(-50%); }
+      }
+      .animate-fade-in-out {
+        animation: fadeInOut 2s ease-in-out forwards;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^18.2.0",
+    "react/": "https://aistudiocdn.com/react@^18.2.0/",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^18.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^0.14.0",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
+    "vite": "https://aistudiocdn.com/vite@^7.2.2",
+    "process": "https://aistudiocdn.com/process@^0.11.10"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
