@@ -65,6 +65,14 @@ export interface PromptState {
 }
 
 export type Action = 
-  | { type: 'SET_VALUE'; payload: { key: keyof PromptState; value: string | number | boolean } }
+  // FIX: Removed `boolean` from value type as no state property is a boolean.
+  | { type: 'SET_VALUE'; payload: { key: keyof PromptState; value: string | number } }
   | { type: 'SET_STATE'; payload: Partial<PromptState> }
   | { type: 'RESET' };
+
+export interface SavedGeneration {
+  id: number;
+  imageUrl: string;
+  state: PromptState;
+  timestamp: number;
+}

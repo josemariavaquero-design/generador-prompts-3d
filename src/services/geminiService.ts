@@ -5,18 +5,15 @@ import { GoogleGenAI, Modality } from "@google/genai";
  * @param prompt The text to generate the image from.
  * @returns A base64 data URL string or null if it fails.
  */
+// FIX: Removed apiKey parameter. The API key is now sourced from environment variables.
 export const generateImage = async (prompt: string): Promise<string | null> => {
   if (!prompt || prompt.trim() === '') {
     console.warn("Attempted to generate an image with an empty prompt.");
     return null;
   }
   
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    throw new Error("API_KEY is not configured. Please select an API key to continue.");
-  }
-  
-  const ai = new GoogleGenAI({ apiKey });
+  // FIX: Initialize GoogleGenAI with API key from environment variables.
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
   try {
     const response = await ai.models.generateContent({
@@ -38,17 +35,22 @@ export const generateImage = async (prompt: string): Promise<string | null> => {
     }
 
     console.warn("No image data found in Gemini response.", response);
-    return null;
+    throw new Error("La API no devolvió datos de imagen válidos.");
   } catch (error) {
     console.error("Detailed error while generating image with Gemini:", error);
     if (error instanceof Error) {
-        // This specific error message indicates a problem with the API key.
-        // Propagate it so the UI can prompt the user to select a new one.
-        if (error.message.includes('API key not valid') || error.message.includes('Requested entity was not found')) {
-             throw new Error("Requested entity was not found. Please re-select your API Key.");
+        if (error.message.includes('API key not valid') || error.message.includes('permission')) {
+             throw new Error("La clave de API no es válida o no tiene los permisos necesarios.");
         }
-        throw new Error(`The Gemini API returned an error: ${error.message}`);
+        if (error.message.includes('429')) { // Too many requests
+             throw new Error("Demasiadas solicitudes. Por favor, espera un momento.");
+        }
+        // Specific check for entity not found, often related to bad keys
+        if (error.message.toLowerCase().includes('entity was not found')) {
+            throw new Error("Clave de API no encontrada o incorrecta. Verifica tu clave.");
+        }
+        throw new Error(`Error de la API de Gemini: ${error.message}`);
     }
-    throw new Error("An unknown error occurred while contacting the Gemini API.");
+    throw new Error("Ocurrió un error desconocido al contactar la API de Gemini.");
   }
 };

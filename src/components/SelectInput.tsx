@@ -25,7 +25,8 @@ const SelectInput: React.FC<SelectInputProps> = ({ id, label, options, state, di
       <select
         id={id}
         name={id}
-        value={typeof value === 'boolean' ? String(value) : (value as string | number)}
+        // FIX: Removed unnecessary boolean check after fixing the Action type.
+        value={value as string | number}
         onChange={handleChange}
         className="w-full bg-gray-900/70 border border-gray-600 rounded-lg py-2 px-3 text-gray-200 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition"
       >

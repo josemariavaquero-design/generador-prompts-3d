@@ -1,5 +1,5 @@
 import { useReducer, useMemo, useCallback, useEffect, useState } from 'react';
-import type { PromptState, Action, Option } from '../types';
+import type { PromptState, Action, Option, SavedGeneration } from '../types';
 import * as C from '../constants';
 import { generateImage } from '../services/geminiService';
 
@@ -48,7 +48,7 @@ function reducer(state: PromptState, action: Action): PromptState {
         }
         return payload ? { ...newState, ...payload } : newState;
       }
-      return { ...state, [action.payload.key]: action.payload.value as any };
+      return { ...state, [action.payload.key]: action.payload.value };
     case 'SET_STATE':
         return { ...state, ...action.payload };
     case 'RESET':
@@ -66,11 +66,63 @@ function pick<T,>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
-export const usePromptGenerator = (setIsApiKeySelected: (value: boolean) => void) => {
+// FIX: Removed apiKey and clearApiKey parameters as API key is now handled by environment variables.
+export const usePromptGenerator = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState<boolean>(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [savedGenerations, setSavedGenerations] = useState<SavedGeneration[]>([]);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // --- Gallery Persistence ---
+  useEffect(() => {
+    try {
+      const storedGenerations = localStorage.getItem('savedGenerations');
+      if (storedGenerations) {
+        setSavedGenerations(JSON.parse(storedGenerations));
+      }
+    } catch (error) {
+      console.error("Failed to load saved generations from localStorage:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('savedGenerations', JSON.stringify(savedGenerations));
+    } catch (error) {
+      console.error("Failed to save generations to localStorage:", error);
+    }
+  }, [savedGenerations]);
+
+  // --- Toast Helper ---
+  const showToast = useCallback((message: string, duration: number = 2500) => {
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), duration);
+  }, []);
+
+  // --- Gallery Handlers ---
+  const handleSaveGeneration = useCallback(() => {
+    if (!imageUrl) return;
+    const newGeneration: SavedGeneration = {
+      id: Date.now(),
+      imageUrl,
+      state: { ...state },
+      timestamp: Date.now(),
+    };
+    setSavedGenerations(prev => [newGeneration, ...prev]);
+    showToast("Imagen guardada en la galería");
+  }, [imageUrl, state, showToast]);
+
+  const handleRestoreGeneration = useCallback((stateToRestore: PromptState) => {
+    dispatch({ type: 'SET_STATE', payload: stateToRestore });
+    showToast("Estado del prompt restaurado");
+  }, [showToast]);
+
+  const handleDeleteGeneration = useCallback((id: number) => {
+    setSavedGenerations(prev => prev.filter(gen => gen.id !== id));
+    showToast("Imagen eliminada de la galería");
+  }, [showToast]);
 
 
   const { camPersp, camLente, camDOF, envFondo, luzContraste, luzHDRI } = state;
@@ -193,16 +245,12 @@ export const usePromptGenerator = (setIsApiKeySelected: (value: boolean) => void
       } catch (error) {
         console.error(error);
         const errorMessage = (error as Error).message || "Error al generar la imagen.";
-        if (errorMessage.includes("Requested entity was not found")) {
-            setIsApiKeySelected(false);
-            setGenerationError("Clave de API no válida o no encontrada. Por favor, selecciona una clave válida.");
-        } else {
-            setGenerationError(errorMessage);
-        }
+        // FIX: Removed API key specific error handling as it's now managed via environment variables.
+        setGenerationError(errorMessage);
       } finally {
         setIsGeneratingImage(false);
       }
-  }, [generatedPrompts, simpleEnglishPrompt, setIsApiKeySelected]);
+  }, [generatedPrompts, simpleEnglishPrompt]);
 
   const handleRandomizeSection = useCallback((sectionTitle: string) => {
       const section = C.CONTROL_SECTIONS.find(s => s.title === sectionTitle);
@@ -252,7 +300,7 @@ export const usePromptGenerator = (setIsApiKeySelected: (value: boolean) => void
 
   useEffect(() => {
       handleRandomize();
-      // eslint-disable-next-line react-hooks-exhaustive-deps
+      // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return { 
@@ -265,6 +313,12 @@ export const usePromptGenerator = (setIsApiKeySelected: (value: boolean) => void
       handleRandomizeSection,
       imageUrl,
       isGeneratingImage,
-      generationError
+      generationError,
+      savedGenerations,
+      handleSaveGeneration,
+      handleRestoreGeneration,
+      handleDeleteGeneration,
+      toastMessage,
+      showToast,
   };
 };

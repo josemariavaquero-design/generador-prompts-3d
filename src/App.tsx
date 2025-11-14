@@ -6,14 +6,14 @@ import ControlCard from './components/ControlCard';
 import OutputPanel from './components/OutputPanel';
 import Header from './components/Header';
 import ActionButtons from './components/ActionButtons';
-import ApiKeyOverlay from './components/ApiKeyOverlay';
-
-// AI Studio functions may not exist in all environments
-// FIX: The global declaration for window.aistudio has been moved to src/vite-env.d.ts to resolve type conflicts.
+import Gallery from './components/Gallery';
+import GalleryControls from './components/GalleryControls';
+import Toast from './components/Toast';
+import type { SavedGeneration } from './types';
+// FIX: Removed ApiKeyOverlay import as API key is now handled by environment variables.
 
 export default function App(): React.ReactElement {
-  const [isApiKeySelected, setIsApiKeySelected] = useState(false);
-  
+  // FIX: Removed API key state management. The API key is now sourced from environment variables.
   const { 
     state, 
     dispatch, 
@@ -24,35 +24,26 @@ export default function App(): React.ReactElement {
     handleRandomizeSection,
     imageUrl,
     isGeneratingImage,
-    generationError
-  } = usePromptGenerator(setIsApiKeySelected);
+    generationError,
+    savedGenerations,
+    handleSaveGeneration,
+    handleRestoreGeneration,
+    handleDeleteGeneration,
+    toastMessage,
+    showToast,
+  } = usePromptGenerator();
   
   const outputPanelRef = useRef<HTMLDivElement>(null);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({ [CONTROL_SECTIONS[0].title]: true });
   const [mode, setMode] = useState<'simple' | 'detailed'>('detailed');
+  const [selectedGeneration, setSelectedGeneration] = useState<SavedGeneration | null>(null);
 
+  // Deselect image if it gets deleted
   useEffect(() => {
-    const checkApiKey = async () => {
-        if (window.aistudio) {
-            const hasKey = await window.aistudio.hasSelectedApiKey();
-            setIsApiKeySelected(hasKey);
-        } else {
-            // Fallback for environments where aistudio is not available
-            console.warn("aistudio environment not detected. API key functionality will be limited.");
-            // For local dev without the aistudio SDK, we can assume a key is present via .env
-            setIsApiKeySelected(true); 
-        }
-    };
-    checkApiKey();
-  }, []);
-
-  const handleSelectKey = useCallback(async () => {
-      if (window.aistudio) {
-          await window.aistudio.openSelectKey();
-          // Optimistically set to true to handle race condition
-          setIsApiKeySelected(true);
-      }
-  }, []);
+    if (selectedGeneration && !savedGenerations.find(g => g.id === selectedGeneration.id)) {
+      setSelectedGeneration(null);
+    }
+  }, [savedGenerations, selectedGeneration]);
 
   const handleToggleSection = (title: string) => {
     setOpenSections(prev => ({ ...prev, [title]: !prev[title] }));
@@ -64,10 +55,10 @@ export default function App(): React.ReactElement {
 
   const sectionsToShow = mode === 'detailed' ? CONTROL_SECTIONS : SIMPLE_CONTROL_SECTIONS;
 
+  // FIX: Removed ApiKeyOverlay rendering. The app is now always accessible, assuming the API key is set in the environment.
   return (
     <>
-      {!isApiKeySelected && <ApiKeyOverlay onSelectKey={handleSelectKey} />}
-      <div className={`bg-gray-900 min-h-screen text-gray-200 font-sans p-4 sm:p-6 lg:p-8 ${!isApiKeySelected ? 'blur-sm pointer-events-none' : ''}`}>
+      <div className={`bg-gray-900 min-h-screen text-gray-200 font-sans p-4 sm:p-6 lg:p-8`}>
         <div className="max-w-screen-2xl mx-auto">
           <Header />
           
@@ -80,6 +71,7 @@ export default function App(): React.ReactElement {
                   imageUrl={imageUrl} 
                   isGeneratingImage={isGeneratingImage} 
                   generationError={generationError}
+                  onSave={handleSaveGeneration}
                 />
               </ControlCard>
               <ControlCard title="Acciones">
@@ -89,6 +81,20 @@ export default function App(): React.ReactElement {
                   onRandomize={handleRandomize} 
                   onReset={handleReset}
                   onScrollToPrompts={handleScrollToPrompts}
+                />
+              </ControlCard>
+              <ControlCard title="Galería Guardada" isCollapsible={true} isOpen={true}>
+                <Gallery 
+                  generations={savedGenerations}
+                  selectedGeneration={selectedGeneration}
+                  onSelect={setSelectedGeneration}
+                />
+                <GalleryControls 
+                  generation={selectedGeneration}
+                  onClose={() => setSelectedGeneration(null)}
+                  onRestore={handleRestoreGeneration}
+                  onDelete={handleDeleteGeneration}
+                  showToast={showToast}
                 />
               </ControlCard>
               <div ref={outputPanelRef}>
@@ -144,6 +150,7 @@ export default function App(): React.ReactElement {
           </footer>
         </div>
       </div>
+      <Toast message={toastMessage} />
     </>
   );
 }

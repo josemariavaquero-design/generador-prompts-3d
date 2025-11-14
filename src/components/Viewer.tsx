@@ -4,6 +4,7 @@ interface ViewerProps {
   imageUrl: string | null;
   isGeneratingImage: boolean;
   generationError: string | null;
+  onSave: () => void;
 }
 
 const LoadingState: React.FC = () => (
@@ -49,10 +50,11 @@ const InitialState: React.FC = () => (
 );
 
 
-const Viewer: React.FC<ViewerProps> = ({ imageUrl, isGeneratingImage, generationError }) => {
+const Viewer: React.FC<ViewerProps> = ({ imageUrl, isGeneratingImage, generationError, onSave }) => {
+  const canSave = !isGeneratingImage && imageUrl;
 
   return (
-    <div className="relative w-full aspect-square rounded-lg flex items-center justify-center overflow-hidden bg-black transition-colors duration-300">
+    <div className="relative w-full aspect-square rounded-lg flex items-center justify-center overflow-hidden bg-black transition-colors duration-300 group">
       {isGeneratingImage && <LoadingState />}
 
       {!isGeneratingImage && generationError && (
@@ -69,6 +71,20 @@ const Viewer: React.FC<ViewerProps> = ({ imageUrl, isGeneratingImage, generation
       
       {!isGeneratingImage && !generationError && !imageUrl && (
         <InitialState />
+      )}
+
+      {canSave && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
+            <button 
+                onClick={onSave}
+                className="bg-black/50 backdrop-blur-sm text-white font-semibold py-2 px-5 rounded-lg shadow-lg hover:bg-purple-600/80 transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v12l-5-3-5 3V4z" />
+                </svg>
+                Guardar
+            </button>
+        </div>
       )}
     </div>
   );
