@@ -5,15 +5,20 @@ import { GoogleGenAI, Modality } from "@google/genai";
  * @param prompt The text to generate the image from.
  * @returns A base64 data URL string or null if it fails.
  */
-// FIX: Removed apiKey parameter. The API key is now sourced from environment variables.
 export const generateImage = async (prompt: string): Promise<string | null> => {
   if (!prompt || prompt.trim() === '') {
     console.warn("Attempted to generate an image with an empty prompt.");
     return null;
   }
   
-  // FIX: Initialize GoogleGenAI with API key from environment variables.
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  // FIX: Use process.env.API_KEY as per coding guidelines. This resolves the error on import.meta.env.
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    // FIX: Updated error message to reflect the correct environment variable.
+    throw new Error("La clave de API no está configurada. Asegúrate de añadir API_KEY a tus variables de entorno.");
+  }
+  
+  const ai = new GoogleGenAI({ apiKey });
 
   try {
     const response = await ai.models.generateContent({
@@ -45,8 +50,7 @@ export const generateImage = async (prompt: string): Promise<string | null> => {
         if (error.message.includes('429')) { // Too many requests
              throw new Error("Demasiadas solicitudes. Por favor, espera un momento.");
         }
-        // Specific check for entity not found, often related to bad keys
-        if (error.message.toLowerCase().includes('entity was not found')) {
+        if (error.message.toLowerCase().includes('entity was not found') || error.message.toLowerCase().includes('api key not found')) {
             throw new Error("Clave de API no encontrada o incorrecta. Verifica tu clave.");
         }
         throw new Error(`Error de la API de Gemini: ${error.message}`);
